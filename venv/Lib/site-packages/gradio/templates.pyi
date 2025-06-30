@@ -10,6 +10,7 @@ import PIL.Image
 from gradio import components
 from gradio.components.audio import WaveformOptions
 from gradio.components.image_editor import Brush, Eraser, LayerOptions, WebcamOptions
+from gradio.components.textbox import InputHTMLAttributes
 from gradio.i18n import I18nData
 
 if TYPE_CHECKING:
@@ -60,6 +61,7 @@ class TextArea(components.Textbox):
         max_length: int | None = None,
         submit_btn: str | bool | None = False,
         stop_btn: str | bool | None = False,
+        html_attributes: InputHTMLAttributes | None = None,
     ):
         super().__init__(
             value=value,
@@ -90,6 +92,7 @@ class TextArea(components.Textbox):
             max_length=max_length,
             submit_btn=submit_btn,
             stop_btn=stop_btn,
+            html_attributes=html_attributes,
         )
     from typing import Callable, Literal, Sequence, Any, TYPE_CHECKING
     from gradio.blocks import Block

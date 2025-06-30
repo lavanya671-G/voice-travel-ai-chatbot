@@ -1,0 +1,160 @@
+{
+  "bookings": [
+    {
+      "id": "36619E46",
+      "type": "flight",
+      "user": "Lavanya",
+      "date": "Today",
+      "airline": "Global Airways",
+      "flight_number": "GA250",
+      "destination": "Hyderabad",
+      "departure": "02:00 PM",
+      "arrival": "06:30 PM",
+      "price": "$320"
+    },
+    {
+      "id": "DD339B49",
+      "type": "hotel",
+      "user": "Lavanya",
+      "date": "Today",
+      "hotel": "Hyderabad Plaza",
+      "city": "Hyderabad",
+      "price": "$200/night"
+    },
+    {
+      "id": "96F2E77B",
+      "type": "hotel",
+      "user": "Lavan",
+      "date": "Today",
+      "hotel": "Grand Hyderabad Hotel",
+      "city": "Hyderabad",
+      "price": "$150/night"
+    },
+    {
+      "id": "BFEE8E85",
+      "type": "flight",
+      "user": "Lavanya",
+      "date": "Today",
+      "airline": "SkyHigh Airlines",
+      "flight_number": "SH546",
+      "destination": "Hyderabad",
+      "departure": "08:00 AM",
+      "arrival": "11:00 AM",
+      "price": "$250"
+    },
+    {
+      "id": "14DAD765",
+      "type": "hotel",
+      "user": "cristy",
+      "date": "Today",
+      "hotel": "Grand Hyderabad Hotel",
+      "city": "Hyderabad",
+      "price": "$150/night"
+    },
+    {
+      "id": "0E0D7394",
+      "type": "hotel",
+      "user": "rusty",
+      "date": "Today",
+      "hotel": "Grand Hyderabad Hotel",
+      "city": "Hyderabad",
+      "price": "$150/night"
+    },
+    {
+      "id": "BBE3FE4F",
+      "type": "flight",
+      "user": "Christy",
+      "date": "Today",
+      "airline": "SkyHigh Airlines",
+      "flight_number": "SH448",
+      "destination": "Hyderabad",
+      "departure": "08:00 AM",
+      "arrival": "11:00 AM",
+      "price": "$250"
+    },
+    {
+      "id": "2EEC55C0",
+      "type": "hotel",
+      "user": "cristy",
+      "date": "Today",
+      "hotel": "Grand Hyderabad Hotel",
+      "city": "Hyderabad",
+      "price": "$150/night"
+    },
+    {
+      "id": "F7C0985B",
+      "type": "flight",
+      "user": "testing",
+      "date": "Today",
+      "airline": "Global Airways",
+      "flight_number": "GA894",
+      "destination": "Hyderabad",
+      "departure": "02:00 PM",
+      "arrival": "06:30 PM",
+      "price": "$320"
+    },
+    {
+      "id": "BCBFFFB0",
+      "type": "hotel",
+      "user": "Christian",
+      "date": "Today",
+      "hotel": "Grand Hyderabad Hotel",
+      "city": "Hyderabad",
+      "price": "$150/night"
+    },
+    {
+      "id": "BACBB0C8",
+      "type": "flight",
+      "user": "trust",
+      "date": "Today",
+      "airline": "SkyHigh Airlines",
+      "flight_number": "SH179",
+      "destination": "Hyderabad",
+      "departure": "08:00 AM",
+      "arrival": "11:00 AM",
+      "price": "$250"
+    },
+    {
+      "id": "6AE50910",
+      "type": "flight",
+      "user": "rusty",
+      "date": "Today",
+      "airline": "SkyHigh Airlines",
+      "flight_number": "SH533",
+      "destination": "Hyderabad",
+      "departure": "08:00 AM",
+      "arrival": "11:00 AM",
+      "price": "$250"
+    },
+    {
+      "id": "373BEA6F",
+      "type": "hotel",
+      "user": "Srishti",
+      "date": "Today",
+      "hotel": "Hyderabad Plaza",
+      "city": "Hyderabad",
+      "price": "$200/night"
+    },
+    {
+      "id": "FFFAB77A",
+      "type": "hotel",
+      "user": "Lavanya",
+      "date": "Today",
+      "hotel": "Grand Hyderabad Hotel",
+      "city": "Hyderabad",
+      "price": "$150/night"
+    },
+    {
+      "id": "AA0F7E0B",
+      "type": "flight",
+      "user": "Lavanya",
+      "date": "Today",
+      "airline": "SkyHigh Airlines",
+      "flight_number": "SH189",
+      "destination": "Delhi",
+      "departure": "08:00 AM",
+      "arrival": "11:00 AM",
+      "price": "$250"
+    }
+  ]
+}

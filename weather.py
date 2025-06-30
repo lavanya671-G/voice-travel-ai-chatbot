@@ -2,15 +2,6 @@ import requests
 API_KEY = "419c43c96821bf08a5d536944bcfcb01"
 
 def get_weather(city):
-    """
-    Fetches current weather data for a given city using OpenWeatherMap API.
-
-    Args:
-        city (str): Name of the city to get weather for.
-
-    Returns:
-        str: A formatted weather report or error message.
-    """
     base_url = "http://api.openweathermap.org/data/2.5/weather"
     params = {
         "q": city,
