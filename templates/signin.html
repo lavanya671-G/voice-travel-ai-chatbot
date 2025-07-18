@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Sign In / Register - Pack Your Bags</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Inter', 'Helvetica Neue', 'Segoe UI', sans-serif;
+    }
+
+    body {
+      background-color: #e4ebfd;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+    }
+
+    h1 {
+      color: #4B0082; /* Dark purple color */
+      margin-bottom: 20px;
+    }
+
+    .form-container {
+      background-color: #fff; /* White background for forms */
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+      width: 100%;
+      max-width: 400px; /* Limit width of form */
+    }
+
+    .form-group {
+      margin-bottom: 15px; /* Space between form fields */
+    }
+
+    label {
+      display: block; /* Block display for labels */
+      margin-bottom: 5px; /* Space below labels */
+      color: #333; /* Text color */
+    }
+
+    input {
+      width: 100%; /* Full width for inputs */
+      padding: 10px; /* Padding for inputs */
+      border: 1px solid #ccc; /* Border for inputs */
+      border-radius: 5px; /* Rounded corners for inputs */
+    }
+
+    button {
+      background-color: #4B0082; /* Dark purple background for buttons */
+      color: white; /* White text for buttons */
+      border: none; /* No border for buttons */
+      padding: 10px; /* Padding for buttons */
+      border-radius: 5px; /* Rounded corners for buttons */
+      cursor: pointer; /* Pointer cursor for buttons */
+      width: 100%; /* Full width for buttons */
+    }
+
+    button:hover {
+      background-color: #3e0071; /* Darker purple on hover */
+    }
+
+    .notification {
+      margin-top: 15px; /* Space above notification */
+      color: green; /* Green color for success messages */
+      display: none; /* Hide notification by default */
+    }
+
+    .error {
+      color: red; /* Red color for error messages */
+      display: none; /* Hide error messages by default */
+    }
+
+    .toggle-link {
+      margin-top: 10px; /* Space above toggle link */
+      color: #4B0082; /* Dark purple color */
+      cursor: pointer; /* Pointer cursor for toggle link */
+      text-decoration: underline; /* Underline for link */
+    }
+  </style>
+</head>
+<body>
+  <h1>Pack Your Bags</h1>
+  <div class="form-container">
+    <div id="signin-form">
+      <h2>Sign In</h2>
+      <div class="notification" id="signin-notification">Successfully signed in!</div>
+      <div class="error" id="signin-error">Invalid email or password.</div>
+      <form id="signin">
+        <div class="form-group">
+          <label for="signin-email">Email:</label>
+          <input type="email" id="signin-email" required />
+        </div>
+        <div class="form-group">
+          <label for="signin-password">Password:</label>
+          <input type="password" id="signin-password" required />
+        </div>
+        <button type="submit">Sign In</button>
+      </form>
+      <div class="toggle-link" onclick="toggleForms()">Don't have an account? Register here.</div>
+    </div>
+
+    <div id="register-form" style="display: none;">
+      <h2>Register</h2>
+      <div class="notification" id="register-notification">Successfully registered! You can now sign in.</div>
+      <div class="error" id="register-error"></div>
+      <form id="register">
+        <div class="form-group">
+          <label for="username">Username:</label>
+          <input type="text" id="username" required />
+        </div>
+        <div class="form-group">
+          <label for="register-email">Email:</label>
+          <input type="email" id="register-email" required />
+        </div>
+        <div class="form-group">
+          <label for="register-password">Password:</label>
+          <input type="password" id="register-password" required />
+          <small>Password must be at least 6 characters long, contain one uppercase letter, one lowercase letter, one number, and one special character.</small>
+        </div>
+        <button type="submit">Register</button>
+      </form>
+      <div class="toggle-link" onclick="toggleForms()">Already have an account? Sign in here.</div>
+    </div>
+  </div>
+
+  <script>
+    const users = []; // Array to store registered users
+
+    function toggleForms() {
+      const signinForm = document.getElementById('signin-form');
+      const registerForm = document.getElementById('register-form');
+      if (signinForm.style.display === "none") {
+        signinForm.style.display = "block";
+        registerForm.style.display = "none";
+      } else {
+        signinForm.style.display = "none";
+        registerForm.style.display = "block";
+      }
+    }
+
+    document.getElementById('register').addEventListener('submit', function(event) {
+      event.preventDefault(); // Prevent form submission
+
+      const username = document.getElementById('username').value;
+      const email = document.getElementById('register-email').value;
+      const password = document.getElementById('register-password').value;
+      const errorDiv = document.getElementById('register-error');
+      const notificationDiv = document.getElementById('register-notification');
+
+      // Password validation
+      const passwordPattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{6,}$/;
+      if (!passwordPattern.test(password)) {
+        errorDiv.textContent = "Password must be at least 6 characters long, contain one uppercase letter, one lowercase letter, one number, and one special character.";
+        errorDiv.style.display = "block";
+        notificationDiv.style.display = "none";
+        return;
+      } else {
+        errorDiv.style.display = "none"; // Hide error message
+      }
+
+      // Simulate successful registration
+      users.push({ username, email, password }); // Store user
+      notificationDiv.style.display = "block";
+      setTimeout(() => {
+        notificationDiv.style.display = "none";
+        document.getElementById('register').reset(); // Reset form
+        toggleForms(); // Switch to sign-in form
+      }, 3000);
+    });
+
+    document.getElementById('signin').addEventListener('submit', function(event) {
+      event.preventDefault(); // Prevent form submission
+
+      const email = document.getElementById('signin-email').value;
+      const password = document.getElementById('signin-password').value;
+      const errorDiv = document.getElementById('signin-error');
+      const notificationDiv = document.getElementById('signin-notification');
+
+      // Check if the user exists
+      const user = users.find(user => user.email === email && user.password === password);
+      if (user) {
+        notificationDiv.style.display = "block";
+        errorDiv.style.display = "none"; // Hide error message
+        setTimeout(() => {
+          notificationDiv.style.display = "none";
+          document.getElementById('signin').reset(); // Reset form
+        }, 3000);
+      } else {
+        errorDiv.style.display = "block"; // Show error message
+        notificationDiv.style.display = "none";
+      }
+    });
+  </script>
+</body>
+</html>
