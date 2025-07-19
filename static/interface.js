@@ -10,11 +10,24 @@ document.addEventListener("DOMContentLoaded", () => {
   let popupClosed = false;
   let conversationStarted = false;
   let recognition;
-
-  // ✅ Cache to speed up repeated city lookups (faster routes)
   const cityCache = {};
+  let map;
+  let routingControl;
 
-  // ✅ Initialize Speech Recognition
+  // Initialize map
+  function initMap() {
+    map = L.map('map').setView([20.5937, 78.9629], 5);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+    
+    setTimeout(() => {
+      map.invalidateSize();
+    }, 500);
+  }
+
+  // Initialize Speech Recognition
   function initSpeechRecognition() {
     if (!("webkitSpeechRecognition" in window)) {
       alert("Your browser doesn't support speech recognition.");
@@ -54,11 +67,25 @@ document.addEventListener("DOMContentLoaded", () => {
     };
   }
 
-  // ✅ Append message
   function appendMessage(type, text, preserveFormat = false) {
     const msgDiv = document.createElement("div");
     msgDiv.className = `chat-message ${type}`;
-    msgDiv.innerHTML = preserveFormat ? `<pre>${text}</pre>` : `<p>${text}</p>`;
+    
+    // Add appropriate icon based on message type
+    let icon = '';
+    if (type === 'bot') {
+      icon = '<i class="fas fa-robot message-icon"></i>';
+    } else {
+      icon = '<i class="fas fa-user message-icon"></i>';
+    }
+    
+    msgDiv.innerHTML = `
+      <div class="message-content">
+        ${icon}
+        <div class="message-text">${preserveFormat ? `<pre>${text}</pre>` : text}</div>
+      </div>
+    `;
+    
     chatMessages.appendChild(msgDiv);
     scrollToBottom();
     return msgDiv;
@@ -72,35 +99,32 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function speakText(text, callback = null) {
-  if (!("speechSynthesis" in window)) return;
+    if (!("speechSynthesis" in window)) return;
 
-  // ✅ Clean the text for speech
-  const cleanText = text
-    .replace(/[^\x00-\x7F]+/g, " ")
-    .replace(/\n/g, ". ")
-    .replace(/\s{2,}/g, " ")
-    .trim();
+    const cleanText = text
+      .replace(/[^\x00-\x7F]+/g, " ")
+      .replace(/\n/g, ". ")
+      .replace(/\s{2,}/g, " ")
+      .trim();
 
-  if (!cleanText) return;
+    if (!cleanText) return;
 
-  const utterance = new SpeechSynthesisUtterance(cleanText);
-  utterance.lang = "en-US";
-  utterance.rate = 1;
+    const utterance = new SpeechSynthesisUtterance(cleanText);
+    utterance.lang = "en-US";
+    utterance.rate = 1;
 
-  // ✅ Disable mic while speaking
-  micBtn.disabled = true;
-  micBtn.classList.add("disabled");
+    micBtn.disabled = true;
+    micBtn.classList.add("disabled");
 
-  utterance.onend = () => {
-    micBtn.disabled = false;
-    micBtn.classList.remove("disabled");
-    if (callback) callback();
-  };
+    utterance.onend = () => {
+      micBtn.disabled = false;
+      micBtn.classList.remove("disabled");
+      if (callback) callback();
+    };
 
-  speechSynthesis.cancel(); // stop any previous speech
-  speechSynthesis.speak(utterance);
-}
-
+    speechSynthesis.cancel();
+    speechSynthesis.speak(utterance);
+  }
 
   function clearDefaultMessages() {
     if (!conversationStarted) {
@@ -110,36 +134,36 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function addReminderBox() {
-    const reminderText =
-      "You can ask about flights, hotels, weather, attractions or routes. Say 'exit' to quit.";
+    const reminderText = "You can ask about flights, hotels, weather, attractions or routes. Say 'exit' to quit.";
     appendMessage("bot", reminderText);
     speakText(reminderText);
   }
 
-  // ✅ Auto-correct common city misspellings
-function normalizeCityName(city) {
-  const corrections = {
-    "benglore": "Bangalore",
-    "bengaluru": "Bangalore",
-    "mumabi": "Mumbai",
-    "hyd": "Hyderabad",
-    "madras": "Chennai", // old names mapping
-    "calcutta": "Kolkata",
-    "delhi": "Delhi" // example redundant but useful
-  };
-
-  const lowerCity = city.toLowerCase();
-  for (let wrong in corrections) {
-    if (lowerCity.includes(wrong)) {
-      return corrections[wrong];
-    }
+  function normalizeCityName(city) {
+    const corrections = {
+      "del": "Delhi",
+      "hyd": "Hyderabad",
+      "chen": "Chennai",
+      "mum": "Mumbai",
+      "beng": "Bangalore",
+      "bom": "Mumbai",
+      "blr": "Bangalore",
+      "chn": "Chennai",
+      "delhi": "Delhi",
+      "hyderabad": "Hyderabad",
+      "mumbai": "Mumbai",
+      "chennai": "Chennai",
+      "bangalore": "Bangalore",
+      "kolkata": "Kolkata",
+      "pune": "Pune"
+    };
+    
+    const lowerCity = city.toLowerCase().trim();
+    return corrections[lowerCity] || city;
   }
-  return city; // return same if no correction
-}
 
-  // ✅ Fetch lat/lon dynamically (cached for speed)
   async function getCoordinates(city) {
-    if (cityCache[city]) return cityCache[city]; // ✅ Use cache
+    if (cityCache[city]) return cityCache[city];
 
     try {
       const res = await fetch(
@@ -148,7 +172,7 @@ function normalizeCityName(city) {
       const data = await res.json();
       if (data.length > 0) {
         const coords = [parseFloat(data[0].lat), parseFloat(data[0].lon)];
-        cityCache[city] = coords; // ✅ Save to cache
+        cityCache[city] = coords;
         return coords;
       }
     } catch (err) {
@@ -157,17 +181,67 @@ function normalizeCityName(city) {
     return null;
   }
 
-  // ✅ Handle All User Queries (Main Logic)
+  function showRouteOnMap(originLat, originLng, destLat, destLng) {
+    // Clear previous route if exists
+    if (routingControl) {
+      map.removeControl(routingControl);
+      routingControl = null;
+    }
+    
+    // Clear existing markers
+    map.eachLayer(layer => {
+      if (layer instanceof L.Marker) {
+        map.removeLayer(layer);
+      }
+    });
+
+    // Add markers for origin and destination
+    const originMarker = L.marker([originLat, originLng]).addTo(map);
+    const destMarker = L.marker([destLat, destLng]).addTo(map);
+    
+    // Create route
+    routingControl = L.Routing.control({
+      waypoints: [
+        L.latLng(originLat, originLng),
+        L.latLng(destLat, destLng)
+      ],
+      routeWhileDragging: false,
+      show: false,
+      addWaypoints: false,
+      fitSelectedRoutes: true,
+      lineOptions: {
+        styles: [{ color: '#4B0082', opacity: 0.8, weight: 5 }]
+      }
+    }).addTo(map);
+
+    routingControl.on('routesfound', function(e) {
+      const routes = e.routes;
+      if (routes && routes.length) {
+        const route = routes[0];
+        const summary = `Route distance: ${(route.summary.totalDistance / 1000).toFixed(1)} km, 
+                        Estimated time: ${Math.round(route.summary.totalTime / 60)} minutes`;
+        appendMessage("bot", summary);
+      }
+    });
+
+    // Fit map to show both points
+    const bounds = new L.LatLngBounds(
+      [originLat, originLng],
+      [destLat, destLng]
+    );
+    map.fitBounds(bounds, { padding: [50, 50] });
+  }
+
   async function handleUserQuery(message) {
     const text = message.trim().toLowerCase();
 
-    // ✅ Route Query
-    const routeRegex = /route\s+from\s+([a-zA-Z\s]+)\s+to\s+([a-zA-Z\s]+)/i;
+    // Route Query
+    const routeRegex = /(?:route|directions|how to go|get to|travel to|travel from)\s+(?:from|between)?\s*([a-zA-Z\s]+?)\s+(?:to|and)\s+([a-zA-Z\s]+)/i;
     const routeMatch = text.match(routeRegex);
 
     if (routeMatch) {
-      const originCity = routeMatch[1].trim();
-      const destCity = routeMatch[2].trim();
+      const originCity = normalizeCityName(routeMatch[1].trim());
+      const destCity = normalizeCityName(routeMatch[2].trim());
 
       try {
         const originCoords = await getCoordinates(originCity);
@@ -180,65 +254,57 @@ function normalizeCityName(city) {
             destCoords[0],
             destCoords[1]
           );
-          const msg = `Here is the best route from ${originCity} to ${destCity}.`;
+          const msg = `🗺️ Showing route from ${originCity} to ${destCity}`;
           appendMessage("bot", msg);
           speakText(msg);
-
-          setTimeout(addReminderBox, 2500);
         } else {
-          const errorMsg = `⚠️ Sorry, I couldn't find route data for ${originCity} to ${destCity}.`;
+          const errorMsg = `⚠️ Sorry, I couldn't find route data for ${originCity} to ${destCity}`;
           appendMessage("bot", errorMsg);
           speakText(errorMsg);
         }
       } catch (error) {
         console.error("Route fetch error:", error);
-        const errorMsg = "⚠️ Something went wrong while fetching the route.";
+        const errorMsg = "⚠️ Something went wrong while fetching the route";
         appendMessage("bot", errorMsg);
         speakText(errorMsg);
       }
       return;
     }
 
-    // ✅ Normal Queries (Flask)
-    // ✅ 3. Handle Normal Queries (Call Flask Backend)
-  clearDefaultMessages();
+    // Normal Queries
+    clearDefaultMessages();
+    const botDiv = appendMessage("bot", "⏳ Fetching the best results, please wait...");
 
-  // ✅ Show loading instantly
-  const botDiv = appendMessage("bot", "⏳ Fetching the best results, please wait...");
+    try {
+      const response = await fetch("/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message }),
+      });
 
-  try {
-    const response = await fetch("/chat", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message }),
-    });
-
-      // Inside handleUserQuery after receiving response
-const data = await response.json();
-botDiv.innerHTML = `<pre>${data.response}</pre>`;
-speakText(data.response, () => {
-  // ✅ Speak reminder ONLY after finishing main response
-  if (
-    data.response.includes("Booking confirmed") ||
-    data.response.includes("Booking cancelled") ||  
-    data.response.includes("The weather in") ||
-    data.response.includes("Top attractions in") ||
-    data.response.includes("Here are the hotel options") ||
-    data.response.includes("Here are the flight options")
-  ) {
-    setTimeout(addReminderBox, 1200);
-  }
-});
-
+      const data = await response.json();
+      botDiv.querySelector('.message-text').innerHTML = `<pre>${data.response}</pre>`;
+      speakText(data.response, () => {
+        if (
+          data.response.includes("Booking confirmed") ||
+          data.response.includes("Booking cancelled") ||  
+          data.response.includes("The weather in") ||
+          data.response.includes("Top attractions in") ||
+          data.response.includes("Here are the hotel options") ||
+          data.response.includes("Here are the flight options")
+        ) {
+          setTimeout(addReminderBox, 1200);
+        }
+      });
     } catch (error) {
       console.error("Error fetching bot response:", error);
-      botDiv.innerHTML = `<p>⚠️ Sorry, something went wrong. Try again!</p>`;
+      botDiv.querySelector('.message-text').innerHTML = `<p>⚠️ Sorry, something went wrong. Try again!</p>`;
     }
 
     scrollToBottom();
   }
 
-  async function sendMessage() {
+  function sendMessage() {
     const message = userInput.value.trim();
     if (!message) return;
     clearDefaultMessages();
@@ -250,65 +316,118 @@ speakText(data.response, () => {
   function resetChat() {
     chatMessages.innerHTML = defaultIntroMessages();
     conversationStarted = false;
+    
+    // Clear map
+    if (routingControl) {
+      map.removeControl(routingControl);
+      routingControl = null;
+    }
+    map.eachLayer(layer => {
+      if (layer instanceof L.Marker) {
+        map.removeLayer(layer);
+      }
+    });
+    map.setView([20.5937, 78.9629], 5);
+    
     if (speechSynthesis.speaking) speechSynthesis.cancel();
+    speakIntroLines();
     scrollToBottom();
   }
 
   function speakIntroLines() {
-  const intro1 = "Hello! I'm your voice travel assistant. How can I help you today?";
-  const intro2 = "You can ask about flights, hotels, weather, attractions or routes. Say exit to quit, or click the plus icon for a new chat.";
+    const intro1 = "Hello! I'm your voice travel assistant. How can I help you today?";
+    const intro2 = "You can ask about flights, hotels, weather, attractions or routes. Say exit to quit, or click the plus icon for a new chat.";
 
-  micBtn.disabled = true;
-  micBtn.classList.add("disabled");
+    micBtn.disabled = true;
+    micBtn.classList.add("disabled");
 
-  const utter1 = new SpeechSynthesisUtterance(intro1.replace(/[^\x00-\x7F]+/g, " "));
-  utter1.lang = "en-US";
-  utter1.rate = 1;
+    const utter1 = new SpeechSynthesisUtterance(intro1.replace(/[^\x00-\x7F]+/g, " "));
+    utter1.lang = "en-US";
+    utter1.rate = 1;
 
-  utter1.onend = () => {
-    const utter2 = new SpeechSynthesisUtterance(intro2.replace(/[^\x00-\x7F]+/g, " "));
-    utter2.lang = "en-US";
-    utter2.rate = 1;
-    utter2.onend = () => {
-      micBtn.disabled = false;
-      micBtn.classList.remove("disabled");
+    utter1.onend = () => {
+      const utter2 = new SpeechSynthesisUtterance(intro2.replace(/[^\x00-\x7F]+/g, " "));
+      utter2.lang = "en-US";
+      utter2.rate = 1;
+      utter2.onend = () => {
+        micBtn.disabled = false;
+        micBtn.classList.remove("disabled");
+      };
+      speechSynthesis.speak(utter2);
     };
-    speechSynthesis.speak(utter2);
-  };
 
-  speechSynthesis.cancel();
-  speechSynthesis.speak(utter1);
-}
-
-
+    speechSynthesis.cancel();
+    speechSynthesis.speak(utter1);
+  }
 
   function defaultIntroMessages() {
     return `
     <div class="chat-message bot">
-      <p>Hello! I'm your voice travel assistant ✈️. How can I help you today?</p>
+      <div class="message-content">
+        <i class="fas fa-robot message-icon"></i>
+        <div class="message-text">
+          <p>Hello! I'm your voice travel assistant ✈️. How can I help you today?</p>
+        </div>
+      </div>
     </div>
     <div class="chat-message bot">
-      <p>You can ask about flights, hotels, weather, attractions or routes. Say 'exit' to quit or click + icon for new chat.</p>
+      <div class="message-content">
+        <i class="fas fa-robot message-icon"></i>
+        <div class="message-text">
+          <p>You can ask about flights, hotels, weather, attractions or routes. Say 'exit' to quit or click + icon for new chat.</p>
+        </div>
+      </div>
     </div>
     <br>
-    <div class="chat-message user suggestion" style="margin-left:200px" data-text="Help me to book hotel at delhi">
-      <p>🧳 Help me to book hotel at delhi</p>
+    <div class="chat-message user suggestion" data-text="Help me to book hotel at delhi">
+      <div class="message-content">
+        <i class="fas fa-user message-icon"></i>
+        <div class="message-text">
+          <p>🏨 Help me to book hotel at delhi</p>
+        </div>
+      </div>
     </div>
-    <div class="chat-message user suggestion" style="margin-left:200px" data-text="What’s the weather like in Chennai">
-      <p>🌦️ What’s the weather like in Chennai</p>
+    <div class="chat-message user suggestion" data-text="What's the weather like in Chennai">
+      <div class="message-content">
+        <i class="fas fa-user message-icon"></i>
+        <div class="message-text">
+          <p>🌦️ What's the weather like in Chennai</p>
+        </div>
+      </div>
     </div>
-    <div class="chat-message user suggestion" style="margin-left:200px" data-text="Suggest top attractions in delhi">
-      <p>🏝️ Suggest top attractions in delhi</p>
+    <div class="chat-message user suggestion" data-text="Suggest top attractions in delhi">
+      <div class="message-content">
+        <i class="fas fa-user message-icon"></i>
+        <div class="message-text">
+          <p>🏝️ Suggest top attractions in delhi</p>
+        </div>
+      </div>
     </div>
-    <div class="chat-message user suggestion" style="margin-left:200px" data-text="Book return flight to hyderabad">
-      <p>🗓️ Book return flight to hyderabad</p>
+    <div class="chat-message user suggestion" data-text="Book return flight to hyderabad">
+      <div class="message-content">
+        <i class="fas fa-user message-icon"></i>
+        <div class="message-text">
+          <p>✈️ Book return flight to hyderabad</p>
+        </div>
+      </div>
+    </div>
+    <div class="chat-message user suggestion" data-text="Show route from Mumbai to Delhi">
+      <div class="message-content">
+        <i class="fas fa-user message-icon"></i>
+        <div class="message-text">
+          <p>🗺️ Show route from Mumbai to Delhi</p>
+        </div>
+      </div>
     </div>
   `;
   }
 
+  // Initialize
+  initMap();
   chatMessages.innerHTML = defaultIntroMessages();
   speakIntroLines();
 
+  // Event Listeners
   chatMessages.addEventListener("click", (e) => {
     const suggestion = e.target.closest(".suggestion");
     if (suggestion) {
@@ -341,37 +460,3 @@ speakText(data.response, () => {
   });
   clearChatBtn.addEventListener("click", resetChat);
 });
-
-// ✅ Map Initialization (Only once)
-var map = L.map("map").setView([21.1466, 79.0889], 5);
-L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-  attribution: "&copy; OpenStreetMap contributors",
-}).addTo(map);
-
-var routingControl;
-function showRouteOnMap(originLat, originLng, destLat, destLng) {
-  if (routingControl) {
-    map.removeControl(routingControl);
-  }
-
-  routingControl = L.Routing.control({
-    waypoints: [
-      L.latLng(originLat, originLng),
-      L.latLng(destLat, destLng),
-    ],
-    routeWhileDragging: false,
-    showAlternatives: false,
-    addWaypoints: false,
-    fitSelectedRoutes: true,
-    draggableWaypoints: false,
-    lineOptions: {
-      addWaypoints: false,
-      styles: [{ color: "blue", opacity: 0.8, weight: 5 }],
-    },
-  }).addTo(map);
-
-  map.fitBounds([
-    [originLat, originLng],
-    [destLat, destLng],
-  ]);
-}

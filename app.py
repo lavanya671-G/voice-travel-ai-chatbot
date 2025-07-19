@@ -1,10 +1,11 @@
 from flask import Flask, request, jsonify, render_template
-from main import handle_user_query  # Import chatbot logic
+from main import handle_user_query
 import threading
+import logging
 
 app = Flask(__name__)
+logging.basicConfig(level=logging.DEBUG)
 
-# ✅ Warm-up function to reduce first-request delay
 def warm_up_chatbot():
     try:
         print("🔄 Warming up chatbot...")
@@ -12,7 +13,6 @@ def warm_up_chatbot():
     except Exception as e:
         print(f"⚠️ Warm-up failed: {e}")
 
-# ✅ Run warm-up once when the app starts
 def run_startup_once():
     if not hasattr(app, "has_run"):
         app.has_run = True
@@ -39,16 +39,16 @@ def chat():
     try:
         data = request.get_json(force=True)
         user_message = data.get("message", "").strip()
+        app.logger.debug(f"Received chat request: {user_message}")
 
         if not user_message:
             return jsonify({"response": "Please say something!"})
 
-        # ✅ Get chatbot response
         response = handle_user_query(user_message, is_voice=True)
-
+        app.logger.debug(f"Sending response: {response}")
         return jsonify({"response": response})
     except Exception as e:
-        print(f"❌ Error in /chat route: {e}")
+        app.logger.error(f"Error in /chat route: {e}", exc_info=True)
         return jsonify({"response": "Sorry, something went wrong. Please try again."})
 
 @app.after_request
@@ -60,5 +60,5 @@ def add_header(response):
 
 if __name__ == "__main__":
     print("✅ Starting Flask server...")
-    warm_up_chatbot()  # ✅ Optional: Also warm up before running the server
+    warm_up_chatbot()
     app.run(debug=True, threaded=True)

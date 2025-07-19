@@ -14,67 +14,55 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.css" />
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
   <script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.js"></script>
+  
+  <!-- Font Awesome for Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
 
-  <!-- ✅ Navbar -->
+  <!-- Fixed Navbar -->
   <div class="navbar">
-    <h1>Pack Your Bags✈️</h1>
+    <h1><i class="fas fa-suitcase-rolling"></i> Pack Your Bags</h1>
     <div class="nav-links">
-      <a href="{{ url_for('index') }}">Home</a>
-      <a href="{{ url_for('about') }}">About</a>
-      <a href="{{ url_for('signin') }}">Sign In</a>
+      <a href="{{ url_for('index') }}"><i class="fas fa-home"></i> Home</a>
+      <a href="{{ url_for('about') }}"><i class="fas fa-info-circle"></i> About</a>
+      <a href="{{ url_for('signin') }}"><i class="fas fa-sign-in-alt"></i> Sign In</a>
     </div>
   </div>
 
-  <!-- ✅ Wrapper for chat + map -->
+  <!-- Wrapper for chat + map -->
   <div class="chat-container-wrapper">
 
-    <!-- ✅ Chat Container -->
+    <!-- Chat Container -->
     <div class="chat-container">
       <div class="chat-header">
-        <h2>Travel Assistant</h2>
-        <button class="new-chat-button" id="clear-chat">+</button>
+        <h2><i class="fas fa-robot"></i> Travel Assistant</h2>
+        <button class="new-chat-button" id="clear-chat"><i class="fas fa-plus"></i></button>
       </div>
 
       <div class="chat-messages" id="chatMessages">
-        <!-- Default intro messages will be added by JavaScript -->
+        <!-- Messages will be added by JavaScript -->
       </div>
 
       <div class="input-bar">
         <input type="text" id="userInput" placeholder="Where can I help you travel?" />
-        <img src="{{ url_for('static', filename='images/microphone.png') }}" class="icon mic-icon" id="micBtn" alt="Mic" />
-        <img src="{{ url_for('static', filename='images/send-message.png') }}" class="icon send-icon" id="sendBtn" alt="Send" />
+        <button class="icon mic-icon" id="micBtn"><i class="fas fa-microphone"></i></button>
+        <button class="icon send-icon" id="sendBtn"><i class="fas fa-paper-plane"></i></button>
       </div>
     </div>
 
-    <!-- ✅ Map Container -->
+    <!-- Map Container -->
     <div class="map-container">
       <div id="map"></div>
     </div>
 
-  </div> <!-- ✅ closes main-container -->
+  </div>
 
   <div id="popupMessage" class="popup">
-  <span id="popupClose" class="popup-close">×</span>
-  Chat too long! Please start a new chat by clicking the + New Chat button.
-</div>
-
+    <span id="popupClose" class="popup-close">×</span>
+    Chat too long! Please start a new chat by clicking the + New Chat button.
+  </div>
 
   <script src="{{ url_for('static', filename='interface.js') }}"></script>
-
-  <!-- ✅ Leaflet Map Initialization -->
-  <script>
-    var map = L.map('map').setView([20.5937, 78.9629], 5); // India view
-
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom: 19,
-      attribution: '© OpenStreetMap contributors'
-    }).addTo(map);
-
-    setTimeout(() => {
-      map.invalidateSize();
-    }, 500);
-  </script>
 </body>
 </html>
