@@ -37,6 +37,14 @@ POSITIVE_WORDS = {"confirm", "confirmed", "yes", "book", "okay", "sure", "done",
 NEGATIVE_WORDS = {"cancel", "no", "exit", "quit", "goodbye", "stop", 
                  "nope", "nah", "negative", "n", "stop", "abort"}
 
+# NEW: Non-city keywords for filtering
+NON_CITY_KEYWORDS = {
+    "flight", "flights", "hotel", "hotels", "weather", "attractions", "places", 
+    "route", "book", "booking", "a", "an", "the", "for", "me", "in", "at", "to", 
+    "from", "find", "get", "show", "update", "cancel", "help", "please", "want", 
+    "i", "am", "my", "same", "option", "options", "number"
+}
+
 # Database Functions
 def init_db():
     if not os.path.exists(DATABASE_FILE):
@@ -165,12 +173,12 @@ def clean_text(text):
     return re.sub(r'[^\w\s]', '', text).strip()
 
 def extract_city(text):
-    """Robust city extraction from user input"""
+    """Robust city extraction with non-city keyword filtering"""
     cleaned_text = clean_text(text).lower()
     
-    # If the input is just a city name, return it directly
+    # If the input is just a city name (and not a keyword), return it
     if len(cleaned_text.split()) == 1:
-        return cleaned_text.title()
+        return "" if cleaned_text in NON_CITY_KEYWORDS else cleaned_text.title()
     
     # Direct patterns for city extraction
     patterns = [
@@ -186,20 +194,24 @@ def extract_city(text):
         r"flights?\s+to\s+([\w\s]+)",
         r"weather\s+in\s+([\w\s]+)",
         r"attractions?\s+in\s+([\w\s]+)",
-        r"places?\s+in\s+([\w\s]+)"
+        r"places?\s+in\s+([\w\s]+)",
+        r"city\s+of\s+([\w\s]+)",
+        r"to\s+([\w\s]+)$"
     ]
     
     for pattern in patterns:
         match = re.search(pattern, cleaned_text)
         if match:
             city = match.group(1).strip().title()
-            if city:
+            # Filter out non-city keywords
+            if city and not any(kw in city.lower() for kw in NON_CITY_KEYWORDS):
                 return city
     
-    # Fallback: last word as city
+    # Fallback: last word as city (if not a keyword)
     words = cleaned_text.split()
     if words:
-        return words[-1].title()
+        last_word = words[-1].title()
+        return last_word if last_word.lower() not in NON_CITY_KEYWORDS else ""
     
     return ""
 
@@ -445,7 +457,6 @@ def handle_user_query(text, is_voice=False):
 
         if choice_num and 1 <= choice_num <= len(context["current_options"]):
             context["selected_option"] = context["current_options"][choice_num - 1]
-            # UPDATED: More natural confirmation prompt
             return f"Do you want to book this {context['current_action']}? Please say 'yes' or 'no'."
 
         elif normalized_text in NEGATIVE_WORDS:
@@ -456,7 +467,6 @@ def handle_user_query(text, is_voice=False):
 
     # Step 3: Confirmation
     if context["selected_option"] and not context["awaiting_name"]:
-        # UPDATED: Extract first word and check against expanded vocabulary
         words = normalized_text.split()
         first_word = words[0] if words else ""
         
@@ -468,7 +478,6 @@ def handle_user_query(text, is_voice=False):
             reset_context()
             return "Booking cancelled."
         else:
-            # UPDATED: More helpful prompt
             return "Please say 'yes' to confirm or 'no' to cancel."
 
     # Step 4: Name & Final Booking
