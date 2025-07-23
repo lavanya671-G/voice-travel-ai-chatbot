@@ -531,6 +531,22 @@
       "date": "2025-07-18",
       "airline": "SkyHigh Airlines",
       "destination": "Hyderabad"
+    },
+    {
+      "id": "282D58F6",
+      "type": "hotel",
+      "user": "Catherine",
+      "date": "2025-07-22",
+      "hotel": "Mumbai Plaza",
+      "city": "Mumbai"
+    },
+    {
+      "id": "2FA35724",
+      "type": "flight",
+      "user": "Catherine",
+      "date": "2025-07-22",
+      "airline": "SkyHigh Airlines",
+      "destination": "Delhi"
     }
   ]
 }
